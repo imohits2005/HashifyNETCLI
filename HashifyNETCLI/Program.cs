@@ -81,7 +81,7 @@ namespace HashifyNETCLI
 
         static void PrintUsage()
         {
-			Logger.Log("Usage: HashifyNETConsole [options]");
+			Logger.Log("Usage: HashifyCLI [options]");
             Logger.Inform("Options:");
             Logger.Inform("  -cl, --command-line             The path to a file containing the full command line.");
             Logger.Inform("  -h, --help                      Show this help message and exit.");
@@ -713,7 +713,7 @@ namespace HashifyNETCLI
                 "using static System.IO.Directory;",
                 "using static System.IO.File;",
                 "using static System.String;",
-                "using static HashifyNETConsole.ScriptHelpers;",
+				"using static HashifyNETCLI.ScriptHelpers;",
             ];
 
             foreach (string @static in statics)
@@ -754,7 +754,7 @@ namespace HashifyNETCLI
                 informationalVersion = "N/A";
             }
 
-			Logger.Log("HashifyNET Console Application v{0}", informationalVersion);
+			Logger.Log("HashifyNET Command Line Interface v{0}", informationalVersion);
 			Logger.Log("Copyright (c) 2025, Deskasoft International. All rights reserved.");
             Logger.Log();
 
