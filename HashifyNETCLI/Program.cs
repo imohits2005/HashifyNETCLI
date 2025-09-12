@@ -105,7 +105,7 @@ namespace HashifyNETCLI
 			Logger.LogDirect(" --input-finalizer ", ConsoleColor.DarkBlue, null);
 			Logger.LogDirect(">>", ConsoleColor.DarkMagenta, null);
 			Logger.LogDirect(" [cyclist begin //", ConsoleColor.DarkRed, null);
-			Logger.LogDirect(" --algorithm ", ConsoleColor.DarkBlue, null);
+			Logger.LogDirect(" --algorithms ", ConsoleColor.DarkBlue, null);
 			Logger.LogDirect(">>", ConsoleColor.DarkMagenta, null);
 			Logger.LogDirect(" Compute ", ConsoleColor.DarkBlue, null);
 			Logger.LogDirect(">>", ConsoleColor.DarkMagenta, null);
