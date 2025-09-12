@@ -1,13 +1,13 @@
 Welcome to HashifyNET Command Line Interface
 --------------------------------------------
 
-HashifyNET CLI is a professionnal command line utility for computing various cryptographic and non-cryptographic hash algorithms supported by [HashifyNET](https://github.com/Deskasoft/HashifyNET).
+HashifyNET CLI is a professional command-line utility for computing various cryptographic and non-cryptographic hash algorithms supported by [HashifyNET](https://github.com/Deskasoft/HashifyNET).
 
-This CLI completely relies on the [HashifyNET](https://github.com/Deskasoft/HashifyNET) project to both demonstrate its capabilities and to offer a standardized way of computing multiple hash algorithms.
+This CLI relies completely on the [HashifyNET](https://github.com/Deskasoft/HashifyNET) project to demonstrate its capabilities and provide a standardized method for computing multiple hash algorithms.
 
-HashifyNET CLI uses runtime C# scripts for I/O operations. This makes it as flexible as writing a C# code without writing a complete C# code. You are able to process any input and output anything you desire without limitations.
+HashifyNET CLI uses runtime C# scripts for I/O operations. This makes it as flexible as writing C# code without having to write a complete C# program. You are able to process any input and output with anything you desire without limitations.
 
-We support inline command-line parameters, a file for specifying command lines (preferably for long command lines and to avoid getting stuck by operating system limitations), and JSON config files to customize your own settings for the hash algorithms you want to use.
+We support command-line parameters, a file for specifying command-line parameters (preferably for long command lines and to avoid getting stuck by operating system limitations), and JSON config files to customize your own settings for the hash algorithms you want to use.
 
 Usage
 -----
@@ -31,12 +31,12 @@ Syntax and Execution
 The query used for algorithms and config profiles are the same, each execution is separated with spaces.
 A query of `CRC CRC` will be computing 2 CRC hashes, usually the same output.
 
-To use the same hash algorithm more than once with different config profiles, you must use the name suffixes separated by a colon just like this:
+To use the same hash algorithm more than once with different config profiles, you must use the name suffixes separated by a colon, just like this:
 ```
 CRC:myCrc1 CRC:myCrc2
 ```
 
-And when you are going to assign profiles to them, you do it in a very similar way as follows:
+And when you are going to assign profiles to them, you do it in a very similar way, as follows:
 ```
 CRC:myCrc1=CRC32 CRC:myCrc2=CRC64
 ```
