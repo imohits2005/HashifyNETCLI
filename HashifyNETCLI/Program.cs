@@ -530,13 +530,33 @@ namespace HashifyNETCLI
             return retval;
 		}
 
-		static IReadOnlyList<(Type AlgorithmType, IHashConfigBase Config)>? ParseJSONConfig(string jsonPath)
+		static IReadOnlyList<JsonConfig>? ParseJSONConfig(string jsonPath)
         {
             try
             {
-                List<(Type AlgorithmType, IHashConfigBase Config)> retval = new List<(Type AlgorithmType, IHashConfigBase Config)>();
+                List<JsonConfigBuilder> retval = new List<JsonConfigBuilder>();
 
-				JsonDocument doc = JsonDocument.Parse(File.ReadAllText(jsonPath));
+				JsonConfigBuilder GetOrAdd(Type type)
+                {
+                    if (retval.Exists(t => t.Type == type))
+                    {
+                        return retval.Find(t => t.Type == type)!;
+                    }
+                    else
+                    {
+                        var builder = new JsonConfigBuilder(type);
+                        retval.Add(builder);
+                        return builder;
+					}
+				}
+
+                JsonDocumentOptions options = new JsonDocumentOptions()
+                {
+                    AllowTrailingCommas = true,
+                    CommentHandling = JsonCommentHandling.Skip,
+                };
+
+				JsonDocument doc = JsonDocument.Parse(File.ReadAllText(jsonPath), options);
                 JsonElement root = doc.RootElement;
                 var objectEnumerator = root.EnumerateObject();
                 foreach (var property in objectEnumerator)
@@ -604,8 +624,12 @@ namespace HashifyNETCLI
 							continue;
 						}
 
-                        retval.Add((hashFunctionType.Function, configBase));
-                    }
+                        if (!GetOrAdd(hashFunctionType.Function).TryAddProfile(hashFunctionType.Name, configBase))
+                        {
+                            Logger.Warning($"Config profile '{profile.Name}' for '{n}' already exists, skipping.");
+                            continue;
+						}
+					}
                     else if (bodyFirstProp.Value.Name.Equals("config", StringComparison.OrdinalIgnoreCase))
                     {
 						if (bodyFirstProp.Value.Value.ValueKind != JsonValueKind.Object)
@@ -668,11 +692,15 @@ namespace HashifyNETCLI
                             continue;
                         }
 
-                        retval.Add((hashFunctionType.Function, config));
+						if (!GetOrAdd(hashFunctionType.Function).TryAddProfile(hashFunctionType.Name, config))
+                        {
+                            Logger.Warning($"Config for '{n}' already exists, skipping.");
+                            continue;
+						}
 					}
 				}
 
-                return retval;
+                return retval.ConvertAll(t => t.Build());
 			}
             catch (JsonException ex)
             {
@@ -904,7 +932,7 @@ namespace HashifyNETCLI
             }
 
             string configJson = cl.GetValueString("-cf", null!);
-            IReadOnlyList<(Type AlgorithmType, IHashConfigBase Config)>? _jsonConfigs = null;
+            IReadOnlyList<JsonConfig>? _jsonConfigs = null;
             if (configJson != null)
             {
                 if (!IsValidString(configJson) || !File.Exists(configJson))
@@ -1028,15 +1056,27 @@ namespace HashifyNETCLI
                         }
                         else
                         {
-                            (Type AlgorithmType, IHashConfigBase Config)? jsonConfig = null;
+                            JsonConfigProfile? jsonConfigProfile = null;
                             if (_jsonConfigs != null && _jsonConfigs.Count > 0)
                             {
-                                jsonConfig = _jsonConfigs.Where(t => t.AlgorithmType == fvar.Function).FirstOrDefault();
+								jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar).FirstOrDefault();
+
+								// Try again without the var name, in case there is a globalized config for this function type.
+								if (jsonConfigProfile.HasValue && !jsonConfigProfile.Value.IsValid)
+                                {
+                                    FunctionVar fvar2 = new FunctionVar(null, fvar.Function);
+									jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar2).FirstOrDefault();
+								}
+
+                                if (jsonConfigProfile.HasValue && jsonConfigProfile.Value.Config == null && jsonConfigProfile.Value.Owner == null && jsonConfigProfile.Value.Name == null)
+                                {
+									jsonConfigProfile = null;
+                                }
                             }
 
-                            if (jsonConfig.HasValue)
+                            if (jsonConfigProfile.HasValue)
                             {
-                                function = HashFactory.Create(fvar.Function, jsonConfig.Value.Config);
+                                function = HashFactory.Create(fvar.Function, jsonConfigProfile.Value.Config);
                             }
                             else
                             {
