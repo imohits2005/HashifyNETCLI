@@ -104,6 +104,21 @@ Here's another JSON containing multiple configs:
 }
 ```
 
+JSON containing multiple configs for the same algorithm:
+```JSON
+{
+	// Default CRC config that will be used for callees without a suffix.
+	"CRC": {
+		"profile": "CRC32"
+	},
+
+	// CRC config for myCrc1 suffix.
+	"CRC:myCrc1": {
+		"profile": "CRC64"
+	},
+}
+```
+
 > [!NOTE]
 > JSON input is ignored when `-cp` or `--config-profiles` exists in the command line parameters.
 > Make sure to use only one of them.
