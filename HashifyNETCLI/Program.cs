@@ -687,7 +687,7 @@ namespace HashifyNETCLI
 				;
 
 			const string staticString = "using static System.String;";
-            const string helperString = "using static HashifyNETConsole.ScriptHelpers;";
+            const string helperString = "using static HashifyNETCLI.ScriptHelpers;";
 			if (!finalizer.Contains(staticString))
 			{
 				finalizer = staticString + Environment.NewLine + finalizer;
@@ -1052,4 +1052,3 @@ namespace HashifyNETCLI
         }
     }
 }
-
