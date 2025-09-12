@@ -975,77 +975,94 @@ namespace HashifyNETCLI
 
             foreach (Type type in types)
             {
-                if (type == null)
+                try
                 {
-                    Logger.Error("Invalid or unsupported algorithm specified.");
-                    PrintAlgorithms();
+                    if (type == null)
+                    {
+                        Logger.Error("Invalid or unsupported algorithm specified.");
+                        PrintAlgorithms();
+                        return 1;
+                    }
+
+                    IHashConfigProfile? profile = null;
+                    if (configProfileQueries != null)
+                    {
+                        profile = GetConfigProfile(type, configProfileQueries);
+                    }
+
+                    IHashFunctionBase function;
+
+                    try
+                    {
+                        if (profile != null)
+                        {
+                            IHashConfigBase configProfile = profile.Create();
+                            if (configProfile == null)
+                            {
+                                Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(type)}'.");
+                                PrintAlgorithms();
+                                return 1;
+                            }
+
+                            function = HashFactory.Create(type, configProfile);
+                        }
+                        else
+                        {
+                            (Type AlgorithmType, IHashConfigBase Config)? jsonConfig = null;
+                            if (_jsonConfigs != null && _jsonConfigs.Count > 0)
+                            {
+                                jsonConfig = _jsonConfigs.Where(t => t.AlgorithmType == type).FirstOrDefault();
+                            }
+
+                            if (jsonConfig.HasValue)
+                            {
+                                function = HashFactory.Create(type, jsonConfig.Value.Config);
+                            }
+                            else
+                            {
+                                function = HashFactory.Create(type);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Could not create hash function instance: {0}", ex);
+                        return 1;
+					}
+
+                    if (function == null)
+                    {
+                        Logger.Error("Failed to create hash function instance.");
+                        return 1;
+                    }
+
+                    IHashValue result;
+                    try
+                    {
+                        result = function.ComputeHash(inputArray);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Hash computation failed: {0}", ex);
+                        return 1;
+                    }
+
+                    object finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
+                    try
+                    {
+                        OutputScript(outputScript, finalizedOutput, GetHashFunctionName(type));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Output script failed to execute: {0}", ex);
+                        return 1;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("An unexpected error occurred: {0}", ex);
                     return 1;
-                }
-
-                IHashConfigProfile? profile = null;
-                if (configProfileQueries != null)
-                {
-					profile = GetConfigProfile(type, configProfileQueries);
-                }
-
-                IHashFunctionBase function;
-                if (profile != null)
-                {
-                    IHashConfigBase configProfile = profile.Create();
-                    if (configProfile == null)
-                    {
-                        Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(type)}'.");
-						PrintAlgorithms();
-						return 1;
-					}
-
-                    function = HashFactory.Create(type, configProfile);
-                }
-                else
-                {
-                    (Type AlgorithmType, IHashConfigBase Config)? jsonConfig = null;
-					if (_jsonConfigs != null && _jsonConfigs.Count > 0)
-                    {
-						jsonConfig = _jsonConfigs.Where(t => t.AlgorithmType == type).FirstOrDefault();
-                    }
-
-                    if (jsonConfig.HasValue)
-                    {
-						function = HashFactory.Create(type, jsonConfig.Value.Config);
-					}
-                    else
-                    {
-                        function = HashFactory.Create(type);
-                    }
 				}
-
-                if (function == null)
-                {
-                    Logger.Error("Failed to create hash function instance.");
-                    return 1;
-                }
-
-                IHashValue result;
-                try
-                {
-                    result = function.ComputeHash(inputArray);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Hash computation failed: {0}", ex);
-                    return 1;
-                }
-
-                object finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
-                try
-                {
-                    OutputScript(outputScript, finalizedOutput, GetHashFunctionName(type));
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Output script failed to execute: {0}", ex);
-                    return 1;
-                }
             }
 
             return 0;
