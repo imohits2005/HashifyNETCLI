@@ -116,12 +116,15 @@ namespace HashifyNETCLI
 			Logger.LogDirect("\n", ConsoleColor.DarkRed, null);
 		}
 
-        static string GetHashFunctionName(Type type)
+        static string GetHashFunctionName(FunctionVar fvar, bool noVar = false)
         {
-            if (!type.IsInterface)
+            if (!fvar.Function.IsInterface)
                 return "N/A";
 
-			return type.Name.Remove(0, 1);
+            if (fvar.Name == null || noVar)
+                return fvar.Function.Name.Remove(0, 1);
+
+			return fvar.Function.Name.Remove(0, 1) + ":" + fvar.Name;
         }
 
         static string GetHashFunctionOriginalName(string name)
@@ -129,21 +132,24 @@ namespace HashifyNETCLI
             return "I" + name;
         }
 
-        static IReadOnlyList<Type> GetHashFunction(string name)
+        static IReadOnlyList<FunctionVar> GetHashFunction(string query)
         {
-            List<Type> types = new List<Type>();
-            string interfaceName = GetHashFunctionOriginalName(name);
+            List<FunctionVar> types = new List<FunctionVar>();
             Type[] cryptographicHashes = HashFactory.GetHashAlgorithms(HashFunctionType.Cryptographic);
             Type[] noncryptographicHashes = HashFactory.GetHashAlgorithms(HashFunctionType.Noncryptographic);
 
-            if (name == "*")
+            if (query == "*")
             {
-                types.AddRange(cryptographicHashes);
-                types.AddRange(noncryptographicHashes);
-                return types;
-			}
+                IEnumerable<Type> h = cryptographicHashes.Union(noncryptographicHashes);
+                foreach (Type t in h)
+                {
+                    types.Add(new FunctionVar(null, t));
+                }
 
-            string[] n = name.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                return types;
+            }
+
+            string[] n = query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (n == null || n.Length < 1)
             {
                 return types;
@@ -151,21 +157,41 @@ namespace HashifyNETCLI
 
             foreach (string s in n)
             {
-                foreach (Type t1 in cryptographicHashes)
+                string actualName;
+                string? suffix = null;
+                if (s.Contains(":"))
                 {
-                    if (t1.Name.Equals(interfaceName, StringComparison.OrdinalIgnoreCase))
+                    string[] p = s.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                    if (p.Length != 2)
                     {
-                        types.Add(t1);
+                        // Error, just clear and return an empty result.
+                        types.Clear();
+                        return types;
+                    }
+
+                    actualName = GetHashFunctionOriginalName(p[0].Trim());
+                    suffix = p[1].Trim();
+				}
+                else
+                {
+                    actualName = GetHashFunctionOriginalName(s);
+                }
+
+				foreach (Type t1 in cryptographicHashes)
+                {
+                    if (t1.Name.Equals(actualName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        types.Add(new FunctionVar(suffix, t1));
                         break;
                     }
                 }
 
                 foreach (Type t2 in noncryptographicHashes)
                 {
-                    if (t2.Name.Equals(interfaceName, StringComparison.OrdinalIgnoreCase))
+                    if (t2.Name.Equals(actualName, StringComparison.OrdinalIgnoreCase))
                     {
-                        types.Add(t2);
-                        break;
+						types.Add(new FunctionVar(suffix, t2));
+						break;
                     }
                 }
             }
@@ -181,18 +207,18 @@ namespace HashifyNETCLI
 
             foreach (Type type in cryptographicHashes)
             {
-                Logger.Inform($"  - {GetHashFunctionName(type)} (Cryptographic)");
+                Logger.Inform($"  - {GetHashFunctionName(new FunctionVar(null, type))} (Cryptographic)");
 			}
 
             foreach (Type type in noncryptographicHashes)
             {
-                Logger.Inform($"  - {GetHashFunctionName(type)} (Non-Cryptographic)");
+                Logger.Inform($"  - {GetHashFunctionName(new FunctionVar(null, type))} (Non-Cryptographic)");
 			}
 		}
 
         static void PrintProfiles(Type algorithm)
         {
-            string algoName = GetHashFunctionName(algorithm);
+            string algoName = GetHashFunctionName(new FunctionVar(null, algorithm));
 
 			IHashConfigProfile[] profiles = HashFactory.GetConfigProfiles(algorithm);
             if (profiles.Length < 1)
@@ -241,9 +267,9 @@ namespace HashifyNETCLI
             return retval;
         }
 
-        static IHashConfigProfile? GetConfigProfile(Type algorithm, string profileName)
+        static IHashConfigProfile? GetConfigProfile(FunctionVar fvar, string profileName)
         {
-			IHashConfigProfile[] profiles = HashFactory.GetConfigProfiles(algorithm);
+			IHashConfigProfile[] profiles = HashFactory.GetConfigProfiles(fvar.Function);
 			if (profiles.Length < 1)
 			{
 				return null;
@@ -260,14 +286,15 @@ namespace HashifyNETCLI
             return null;
 		}
 
-        static IHashConfigProfile? GetConfigProfile(Type algorithm, Dictionary<string, string> query)
+        static IHashConfigProfile? GetConfigProfile(FunctionVar fvar, Dictionary<string, string> query)
         {
-            string algoName = GetHashFunctionName(algorithm);
+            string algoName = GetHashFunctionName(fvar);
+            string algoName_novar = GetHashFunctionName(fvar, true);
 
-            string? profile = null;
+			string? profile = null;
             foreach (KeyValuePair<string, string> pair in query)
             {
-                if (algoName.Equals(pair.Key, StringComparison.OrdinalIgnoreCase))
+                if (algoName.Equals(pair.Key, StringComparison.OrdinalIgnoreCase) || algoName_novar.Equals(pair.Key, StringComparison.OrdinalIgnoreCase))
                 {
 					profile = pair.Value;
                     break;
@@ -279,7 +306,7 @@ namespace HashifyNETCLI
                 return null;
             }
 
-            IHashConfigProfile[] profiles = HashFactory.GetConfigProfiles(algorithm);
+            IHashConfigProfile[] profiles = HashFactory.GetConfigProfiles(fvar.Function);
             if (profiles.Length < 1)
             {
                 return null;
@@ -527,14 +554,14 @@ namespace HashifyNETCLI
                         continue;
 					}
 
-                    IReadOnlyList<Type> hashFunctionTypes = GetHashFunction(n);
+                    IReadOnlyList<FunctionVar> hashFunctionTypes = GetHashFunction(n);
                     if (hashFunctionTypes.Count < 1)
                     {
                         Logger.Warning($"Could not find a hash algorithm type with the given JSON name '{n}'.");
 						continue;
 					}
 
-                    Type hashFunctionType = hashFunctionTypes[0];
+					FunctionVar hashFunctionType = hashFunctionTypes[0];
                     var body = property.Value.EnumerateObject();
                     JsonProperty? bodyFirstProp = null;
                     foreach (var bodyProp in body)
@@ -577,7 +604,7 @@ namespace HashifyNETCLI
 							continue;
 						}
 
-                        retval.Add((hashFunctionType, configBase));
+                        retval.Add((hashFunctionType.Function, configBase));
                     }
                     else if (bodyFirstProp.Value.Name.Equals("config", StringComparison.OrdinalIgnoreCase))
                     {
@@ -587,7 +614,7 @@ namespace HashifyNETCLI
 							continue;
 						}
 
-                        if (!HashFactory.TryCreateDefaultConcreteConfig(hashFunctionType, out IHashConfigBase config))
+                        if (!HashFactory.TryCreateDefaultConcreteConfig(hashFunctionType.Function, out IHashConfigBase config))
                         {
                             Logger.Warning($"Unable to create an instance of default concrete hash config for '{n}'.");
 							continue;
@@ -641,7 +668,7 @@ namespace HashifyNETCLI
                             continue;
                         }
 
-                        retval.Add((hashFunctionType, config));
+                        retval.Add((hashFunctionType.Function, config));
 					}
 				}
 
@@ -829,7 +856,7 @@ namespace HashifyNETCLI
                 string lprofiles = cl.GetValueString("-lp", null!);
                 if (lprofiles != null)
                 {
-                    IReadOnlyList<Type> algos = GetHashFunction(lprofiles);
+                    IReadOnlyList<FunctionVar> algos = GetHashFunction(lprofiles);
                     if (algos == null || algos.Count < 1)
                     {
                         Logger.Error($"No algorithm found with '{lprofiles}' to retrieve profiles for.");
@@ -837,7 +864,7 @@ namespace HashifyNETCLI
                         return 1;
                     }
 
-                    Type f = algos[0];
+                    Type f = algos[0].Function;
                     PrintProfiles(f);
                     return 0;
                 }
@@ -965,7 +992,7 @@ namespace HashifyNETCLI
 				return 1;
 			}
 
-			IReadOnlyList<Type> types = GetHashFunction(algorithm);
+			IReadOnlyList<FunctionVar> types = GetHashFunction(algorithm);
             if (types == null || types.Count < 1)
             {
                 Logger.Error("Invalid or unsupported algorithm specified.");
@@ -973,21 +1000,14 @@ namespace HashifyNETCLI
                 return 1;
             }
 
-            foreach (Type type in types)
+            foreach (FunctionVar fvar in types)
             {
                 try
                 {
-                    if (type == null)
-                    {
-                        Logger.Error("Invalid or unsupported algorithm specified.");
-                        PrintAlgorithms();
-                        return 1;
-                    }
-
                     IHashConfigProfile? profile = null;
                     if (configProfileQueries != null)
                     {
-                        profile = GetConfigProfile(type, configProfileQueries);
+                        profile = GetConfigProfile(fvar, configProfileQueries);
                     }
 
                     IHashFunctionBase function;
@@ -999,28 +1019,28 @@ namespace HashifyNETCLI
                             IHashConfigBase configProfile = profile.Create();
                             if (configProfile == null)
                             {
-                                Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(type)}'.");
+                                Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(fvar)}'.");
                                 PrintAlgorithms();
                                 return 1;
                             }
 
-                            function = HashFactory.Create(type, configProfile);
+                            function = HashFactory.Create(fvar.Function, configProfile);
                         }
                         else
                         {
                             (Type AlgorithmType, IHashConfigBase Config)? jsonConfig = null;
                             if (_jsonConfigs != null && _jsonConfigs.Count > 0)
                             {
-                                jsonConfig = _jsonConfigs.Where(t => t.AlgorithmType == type).FirstOrDefault();
+                                jsonConfig = _jsonConfigs.Where(t => t.AlgorithmType == fvar.Function).FirstOrDefault();
                             }
 
                             if (jsonConfig.HasValue)
                             {
-                                function = HashFactory.Create(type, jsonConfig.Value.Config);
+                                function = HashFactory.Create(fvar.Function, jsonConfig.Value.Config);
                             }
                             else
                             {
-                                function = HashFactory.Create(type);
+                                function = HashFactory.Create(fvar.Function);
                             }
                         }
                     }
@@ -1050,7 +1070,7 @@ namespace HashifyNETCLI
                     object finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
                     try
                     {
-                        OutputScript(outputScript, finalizedOutput, GetHashFunctionName(type));
+                        OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
                     }
                     catch (Exception ex)
                     {
