@@ -1,4 +1,4 @@
-﻿// *
+// *
 // *****************************************************************************
 // *
 // * Copyright (c) 2025 Deskasoft International
@@ -33,14 +33,21 @@ namespace HashifyNETCLI
 {
 	public static class ScriptHelpers
 	{
-		public static void Print(string message, params object[] args)
+		public static bool Print(string message, params object[] args)
 		{
 			Logger.Script(message, args);
+			return true;
 		}
 
-		public static void Print(object message, params object[] args)
+		public static bool Print(object message, params object[] args)
 		{
 			Logger.Script(message is string ? (string)message : message?.ToString() ?? "N/A", args);
+			return true;
+		}
+
+		public static bool Fail(string message, params object[] args)
+		{
+			throw new FailException(string.Format(message, args));
 		}
 
 		public static byte[] StringToArray(string input)
