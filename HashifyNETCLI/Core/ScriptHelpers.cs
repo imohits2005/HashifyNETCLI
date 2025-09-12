@@ -45,6 +45,18 @@ namespace HashifyNETCLI
 			return true;
 		}
 
+		public static bool PrintDirect(string message, params object[] args)
+		{
+			Logger.ScriptDirect(message, args);
+			return true;
+		}
+
+		public static bool PrintDirect(object message, params object[] args)
+		{
+			Logger.ScriptDirect(message is string ? (string)message : message?.ToString() ?? "N/A", args);
+			return true;
+		}
+
 		public static bool Fail(string message, params object[] args)
 		{
 			throw new FailException(string.Format(message, args));
