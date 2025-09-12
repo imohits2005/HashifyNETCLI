@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>HashifyCLI</AssemblyName>
+
+    <SignAssembly>True</SignAssembly>
+    <DelaySign>True</DelaySign>
+
+    <Company>Deskasoft International</Company>
+    <Product>HashifyNETConsole</Product>
+    <Copyright>Copyright © Deskasoft International</Copyright>
+    <Version>0.5.0</Version>
+    <Authors>$(Company)</Authors>
+    <AssemblyOriginatorKeyFile>..\HashifyNET.publickey</AssemblyOriginatorKeyFile>
+    <NuGetAudit>False</NuGetAudit>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+
+    <RuntimeIdentifiers>win-x86;win-x64;win-arm64;osx-x64;osx-arm64;linux-x64;linux-arm;linux-arm64;linux-musl-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="logo.ico" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="HashifyNET" Version="6.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.14.0" />
+  </ItemGroup>
+
+</Project>
