@@ -713,7 +713,7 @@ namespace HashifyNETCLI
 		{
 			var options = ScriptOptions.Default
 				.WithImports("System", "System.Linq", "System.IO", "HashifyNet")
-				.WithReferences(typeof(IHashValue).Assembly)
+				.WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
 				;
             
             string[] statics =
@@ -721,7 +721,8 @@ namespace HashifyNETCLI
 				"using static System.IO.Directory;",
                 "using static System.IO.File;",
                 "using static System.String;",
-            ];
+				"using static HashifyNETCLI.ScriptHelpers;",
+			];
 
             foreach (string @static in statics)
             {
@@ -786,16 +787,23 @@ namespace HashifyNETCLI
         {
             var options = ScriptOptions.Default
                 .WithImports("System", "System.Linq", "HashifyNet")
-				.WithReferences(typeof(IHashValue).Assembly)
+				.WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
 				;
 
             const string staticString = "using static System.String;";
-            if (!finalizer.Contains(staticString))
-            {
-                finalizer = staticString + Environment.NewLine + finalizer;
-            }
+			const string helperString = "using static HashifyNETCLI.ScriptHelpers;";
 
-            return CSharpScript.EvaluateAsync(finalizer, options, value, null).GetAwaiter().GetResult();
+			if (!finalizer.Contains(staticString))
+			{
+				finalizer = staticString + Environment.NewLine + finalizer;
+			}
+
+			if (!finalizer.Contains(helperString))
+			{
+				finalizer = helperString + Environment.NewLine + finalizer;
+			}
+
+			return CSharpScript.EvaluateAsync(finalizer, options, value, null).GetAwaiter().GetResult();
 		}
 
         public static int Main(string[] args)
@@ -991,6 +999,11 @@ namespace HashifyNETCLI
 			{
 				input = InputScript(inputScript);
 			}
+			catch (FailException ex)
+			{
+				Logger.Error(ex.Message);
+				return 2;
+			}
 			catch (Exception ex)
 			{
 				Logger.Error("Input script failed to execute: {0}", ex);
@@ -1007,6 +1020,11 @@ namespace HashifyNETCLI
 			try
 			{
 				finalizedInput = FinalizeInputScript(inputFinalizer, input);
+			}
+			catch (FailException ex)
+			{
+				Logger.Error(ex.Message);
+				return 2;
 			}
 			catch (Exception ex)
 			{
@@ -1107,10 +1125,30 @@ namespace HashifyNETCLI
                         return 1;
                     }
 
-                    object finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
+                    object finalizedOutput;
+                    try
+                    {
+                        finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
+                    }
+					catch (FailException ex)
+					{
+						Logger.Error(ex.Message);
+						return 2;
+					}
+					catch (Exception ex)
+                    {
+						Logger.Error("Output finalizer script failed to execute: {0}", ex);
+						return 1;
+					}
+
                     try
                     {
                         OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
+                    }
+                    catch (FailException ex)
+                    {
+                        Logger.Error(ex.Message);
+                        return 2;
                     }
                     catch (Exception ex)
                     {
