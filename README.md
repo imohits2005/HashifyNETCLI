@@ -53,6 +53,32 @@ The execution order for the entire process is as follows:
 -input >> --input-finalizer >> [cyclist begin // --algorithm >> Compute >> --output-finalizer >> --output \\ cyclist end]
 ```
 
+Usage Scenario Examples
+-----------------------
+
+#### Random CRC32 hash for every call:
+```
+HashifyCLI -i "DateTimeOffset.UtcNow.Ticks.ToString()" -a "CRC" -cp "CRC=CRC32"
+```
+
+#### Validate Hash - Ensure the computed hash equals to pre-computed hash
+```
+HashifyCLI -i "ReadAllBytes('HashifyNET.dll')" -if "Input" -a "MD5" -of "AsHexString() != '18c5770ef035f90924b988f2a947362a' ? Fail('Hash Mismatch').ToString() : 'Hash Matches!'"
+```
+
+> [!NOTE]
+> Call to Fail interrupts the entire execution and causes the CLI to return status code 2.
+
+#### Compute Argon2id
+```
+HashifyCLI -i "'Hello World'" -a "Argon2id" -cp "Argon2id=OWASP" -of "Decode()"
+```
+
+#### Compute Argon2id and Print Directly (no timestamp)
+```
+HashifyCLI -i "'Hello World'" -a "Argon2id" -cp "Argon2id=OWASP" -of "Decode()" -o "PrintDirect(Result)"
+```
+
 JSON Support
 ------------
 The CLI supports JSON config files to be passed with the `-cf` or `--config-file` parameter. This JSON file must contain config profiles or preferences for any supported hash algorithm that you'd use.
