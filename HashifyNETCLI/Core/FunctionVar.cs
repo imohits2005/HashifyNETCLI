@@ -27,11 +27,39 @@
 // ******************************************************************************
 // *
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace HashifyNETCLI
 {
-	public readonly struct FunctionVar(string? name, Type function)
+	public readonly struct FunctionVar(string? name, Type function) : IEquatable<FunctionVar>
 	{
 		public string? Name { get; } = name;
 		public Type Function { get; } = function ?? throw new ArgumentNullException(nameof(function));
+
+		public override string ToString()
+		{
+			if (string.IsNullOrEmpty(Name))
+				return Function.FullName ?? Function.Name;
+			else
+				return $"{Name}:{Function.FullName ?? Function.Name}";
+		}
+
+		public override int GetHashCode()
+		{
+			return HashCode.Combine(Name?.ToLowerInvariant(), Function);
+		}
+
+		public override bool Equals(object? obj)
+		{
+			return obj is FunctionVar var && Equals(var);
+		}
+
+		public bool Equals([AllowNull] FunctionVar other)
+		{
+			return string.Equals(Name, other.Name, StringComparison.OrdinalIgnoreCase) && Function == other.Function;
+		}
+
+		public static bool operator ==(FunctionVar left, FunctionVar right) => left.Equals(right);
+		public static bool operator !=(FunctionVar left, FunctionVar right) => !(left == right);
 	}
 }
