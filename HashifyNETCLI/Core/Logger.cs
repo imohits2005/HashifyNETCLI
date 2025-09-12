@@ -1,4 +1,4 @@
-﻿// *
+// *
 // *****************************************************************************
 // *
 // * Copyright (c) 2025 Deskasoft International
@@ -99,6 +99,11 @@ namespace HashifyNETCLI
 		public static void Script(string message, params object[] args)
 		{
 			Print(3, message, null, null, false, args);
+		}
+
+		public static void ScriptDirect(string message, params object[] args)
+		{
+			Print(3, message, null, null, true, args);
 		}
 
 		public static void Debug(string message, params object[] args)
