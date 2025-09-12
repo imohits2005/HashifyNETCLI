@@ -17,4 +17,26 @@ dotnet publish -c Release -p:PublishProfile=Profile_Dependent_linux-x64
 dotnet publish -c Release -p:PublishProfile=Profile_Dependent_linux-arm
 dotnet publish -c Release -p:PublishProfile=Profile_Dependent_linux-arm64
 dotnet publish -c Release -p:PublishProfile=Profile_Dependent_linux-musl-x64
+
+cd "bin\Release\net8.0\publish\contained\"
+tar -a -c -f "win-x86-contained.zip" "win-x86"
+tar -a -c -f "win-x64-contained.zip" "win-x64"
+tar -a -c -f "win-arm64-contained.zip" "win-arm64"
+tar -a -c -f "osx-x64-contained.zip" "osx-x64"
+tar -a -c -f "osx-arm64-contained.zip" "osx-arm64"
+tar -a -c -f "linux-x64-contained.zip" "linux-x64"
+tar -a -c -f "linux-arm-contained.zip" "linux-arm"
+tar -a -c -f "linux-arm64-contained.zip" "linux-arm64"
+tar -a -c -f "linux-musl-x64-contained.zip" "linux-musl-x64"
+cd "..\dependent\"
+tar -a -c -f "win-x86-dependent.zip" "win-x86"
+tar -a -c -f "win-x64-dependent.zip" "win-x64"
+tar -a -c -f "win-arm64-dependent.zip" "win-arm64"
+tar -a -c -f "osx-x64-dependent.zip" "osx-x64"
+tar -a -c -f "osx-arm64-dependent.zip" "osx-arm64"
+tar -a -c -f "linux-x64-dependent.zip" "linux-x64"
+tar -a -c -f "linux-arm-dependent.zip" "linux-arm"
+tar -a -c -f "linux-arm64-dependent.zip" "linux-arm64"
+tar -a -c -f "linux-musl-x64-dependent.zip" "linux-musl-x64"
+
 @pause
