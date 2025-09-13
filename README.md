@@ -156,3 +156,8 @@ JSON containing multiple configs for the same algorithm:
 > [!NOTE]
 > JSON input is ignored when `-cp` or `--config-profiles` exists in the command line parameters.
 > Make sure to use only one of them.
+
+License
+-------
+
+HashifyNETCLI is released under the terms of the MIT license. See [LICENSE](https://github.com/deskasoft/HashifyNETCLI/blob/main/LICENSE) for more information or see http://opensource.org/licenses/MIT.
