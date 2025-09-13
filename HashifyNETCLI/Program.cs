@@ -28,9 +28,6 @@
 // *
 
 using HashifyNet;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Scripting;
-using Microsoft.CodeAnalysis.Scripting;
 using System.Numerics;
 using System.Reflection;
 using System.Text;
@@ -38,17 +35,6 @@ using System.Text.Json;
 
 namespace HashifyNETCLI
 {
-	public class FinalizeInputScriptGlobals
-	{
-		public object? Input;
-	}
-
-	public class OutputScriptGlobals
-	{
-        public string? Algorithm;
-		public object? Result;
-	}
-
 	internal class Program
     {
 		static string Stringize(string str)
@@ -88,10 +74,10 @@ namespace HashifyNETCLI
 			Logger.Inform("  -l, --list                      Lists available hash algorithms and exit.");
 			Logger.Inform("  -lp, --list-profiles            Lists available config profiles of a specific hash algorithm and exit: blake3 (case-insensitive).");
 			Logger.Inform("  -i, --input                     Specify input script: \"'Foo Bar'\"");
-			Logger.Inform("  -if, --input-finalizer          Finalizes the input: StringToArray(Input as string)");
+			Logger.Inform("  -if, --input-finalizer          Finalizes the input: StringToArray(Input)");
 			Logger.Inform("  -a, --algorithms                Specify hashing algorithms: Blake2b, blake3 (case-insensitive).");
-            Logger.Inform("  -o, --output                    Specify output script: Print(Result)");
-            Logger.Inform("  -of, --output-finalizer         Finalizes the output: Join(\", \", Coerce(5).AsByteArray())");
+            Logger.Inform("  -o, --output                    Specify output script: Print(Algorithm .. ': ' .. Result)");
+            Logger.Inform("  -of, --output-finalizer         Finalizes the output: Join(\", \", Coerce(5):AsByteArray())");
             Logger.Inform("  -cp, --config-profiles          Specify the config profiles (one for every algorithm specified by --algorithms) to use: CRC=CRC32 Argon2id=OWASP (case-insensitive).");
             Logger.Inform("  -cf, --config-file              Specify the config JSON to use: configs.json.");
 
@@ -449,7 +435,6 @@ namespace HashifyNETCLI
                     Array array;
 
                     // Array.CreateInstance is AOT unfriendly, so we initialize each type's array manually.
-                    // Note that we currently do not support AOT due to runtime C# scripting, but in the future this is planned.
                     if (underlyingType == typeof(sbyte))
                     {
                         array = new sbyte[values.Count];
@@ -709,119 +694,24 @@ namespace HashifyNETCLI
             }
 		}
 
-		static object InputScript(string script)
-		{
-			var options = ScriptOptions.Default
-				.WithImports("System", "System.Linq", "System.IO", "HashifyNet")
-				.WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
-				;
-            
-            string[] statics =
-			[
-				"using static System.IO.Directory;",
-                "using static System.IO.File;",
-                "using static System.String;",
-				"using static HashifyNETCLI.ScriptHelpers;",
-			];
-
-            foreach (string @static in statics)
-            {
-                if (!script.Contains(@static))
-                {
-                    script = @static + Environment.NewLine + script;
-                }
-            }
-
-			return CSharpScript.EvaluateAsync(script, options).GetAwaiter().GetResult();
-		}
-
-		static object FinalizeInputScript(string finalizer, object input)
-		{
-			var options = ScriptOptions.Default
-				.WithImports("System", "System.Linq", "HashifyNet")
-				.WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
-				;
-
-			const string staticString = "using static System.String;";
-            const string helperString = "using static HashifyNETCLI.ScriptHelpers;";
-			if (!finalizer.Contains(staticString))
-			{
-				finalizer = staticString + Environment.NewLine + finalizer;
-			}
-
-            if (!finalizer.Contains(helperString))
-            {
-                finalizer = helperString + Environment.NewLine + finalizer;
-			}
-
-			return CSharpScript.EvaluateAsync(finalizer, options, new FinalizeInputScriptGlobals() { Input = input}).GetAwaiter().GetResult();
-		}
-
-        static void OutputScript(string script, object result, string algorithm)
-        {
-            var options = ScriptOptions.Default
-                .WithImports("System", "System.Linq", "System.IO", "HashifyNet")
-			    .WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
-				;
-
-            string[] statics =
-            [
-                "using static System.IO.Directory;",
-                "using static System.IO.File;",
-                "using static System.String;",
-				"using static HashifyNETCLI.ScriptHelpers;",
-            ];
-
-            foreach (string @static in statics)
-            {
-                if (!script.Contains(@static))
-                {
-                    script = @static + Environment.NewLine + script;
-                }
-            }
-
-            CSharpScript.EvaluateAsync(script, options, new OutputScriptGlobals() { Result = result, Algorithm = algorithm }).GetAwaiter().GetResult();
-        }
-
-		static object FinalizeOutputScript(string finalizer, IHashValue value)
-        {
-            var options = ScriptOptions.Default
-                .WithImports("System", "System.Linq", "HashifyNet")
-				.WithReferences(typeof(IHashValue).Assembly, typeof(ScriptHelpers).Assembly)
-				;
-
-            const string staticString = "using static System.String;";
-			const string helperString = "using static HashifyNETCLI.ScriptHelpers;";
-
-			if (!finalizer.Contains(staticString))
-			{
-				finalizer = staticString + Environment.NewLine + finalizer;
-			}
-
-			if (!finalizer.Contains(helperString))
-			{
-				finalizer = helperString + Environment.NewLine + finalizer;
-			}
-
-			return CSharpScript.EvaluateAsync(finalizer, options, value, null).GetAwaiter().GetResult();
-		}
-
         public static int Main(string[] args)
         {
-                string? informationalVersion = Assembly.GetEntryAssembly()?
-        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-        .InformationalVersion;
+            using ScriptEngine scriptEngine = new ScriptEngine();
+
+            string? informationalVersion = Assembly.GetEntryAssembly()?
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+    .InformationalVersion;
 
             if (string.IsNullOrEmpty(informationalVersion))
             {
                 informationalVersion = "N/A";
             }
 
-			Logger.Log("HashifyNET Command Line Interface v{0}", informationalVersion);
-			Logger.Log("Copyright (c) 2025, Deskasoft International. All rights reserved.");
+            Logger.Log("HashifyNET Command Line Interface v{0}", informationalVersion);
+            Logger.Log("Copyright (c) 2025, Deskasoft International. All rights reserved.");
             Logger.Log();
 
-			CommandLine cl = new CommandLine(args);
+            CommandLine cl = new CommandLine(args);
             if (cl.Count < 1)
             {
                 PrintUsage();
@@ -831,19 +721,19 @@ namespace HashifyNETCLI
             CommandLine proc = cl;
             label_restart:
 
-			proc.MapCommand("--command-line", "-cl", true);
-			proc.MapCommand("--help", "-h", false);
-			proc.MapCommand("--list", "-l", false);
-			proc.MapCommand("--list-profiles", "-lp", false);
-			proc.MapCommand("--input", "-i", true);
-			proc.MapCommand("--input-finalizer", "-if", true);
-			proc.MapCommand("--algorithms", "-a", true);
-			proc.MapCommand("--output", "-o", true);
-			proc.MapCommand("--output-finalizer", "-of", true);
-			proc.MapCommand("--config-profile", "-cp", true);
-			proc.MapCommand("--config-file", "-cf", true);
+            proc.MapCommand("--command-line", "-cl", true);
+            proc.MapCommand("--help", "-h", false);
+            proc.MapCommand("--list", "-l", false);
+            proc.MapCommand("--list-profiles", "-lp", false);
+            proc.MapCommand("--input", "-i", true);
+            proc.MapCommand("--input-finalizer", "-if", true);
+            proc.MapCommand("--algorithms", "-a", true);
+            proc.MapCommand("--output", "-o", true);
+            proc.MapCommand("--output-finalizer", "-of", true);
+            proc.MapCommand("--config-profile", "-cp", true);
+            proc.MapCommand("--config-file", "-cf", true);
 
-			if (proc.HasFlag("-cl"))
+            if (proc.HasFlag("-cl"))
             {
                 string clPath = proc.GetValueString("-cl", null!);
                 if (!File.Exists(clPath))
@@ -857,14 +747,14 @@ namespace HashifyNETCLI
                     if (proc != cl)
                         orig = proc;
 
-					proc = new CommandLine(null!);
-					proc.AppendCommandLine(clPath);
+                    proc = new CommandLine(null!);
+                    proc.AppendCommandLine(clPath);
 
                     if (orig != null)
                         proc.AppendCommandLine(orig);
 
-					goto label_restart;
-				}
+                    goto label_restart;
+                }
             }
 
             if (cl != proc)
@@ -913,9 +803,9 @@ namespace HashifyNETCLI
             }
 
             string inputScript = Stringize(cl.GetValueString("-i", null!));
-            string inputFinalizer = Stringize(cl.GetValueString("-if", "StringToArray(Input as string)"));
+            string inputFinalizer = Stringize(cl.GetValueString("-if", "StringToArray(Input)"));
             string algorithm = Stringize(cl.GetValueString("-a", null!));
-            string outputScript = Stringize(cl.GetValueString("-o", "Print(Result)"));
+            string outputScript = Stringize(cl.GetValueString("-o", "Print(Algorithm .. ': ' .. Result)"));
             string outputFinalizer = Stringize(cl.GetValueString("-of", "Join(\", \", AsByteArray())"));
 
             string configProfileQuery = cl.GetValueString("-cp", null!);
@@ -924,19 +814,19 @@ namespace HashifyNETCLI
             {
                 if (!IsValidString(configProfileQuery))
                 {
-					Logger.Error("If not null, config profile query must contain a valid non-empty and non-whitespace string.");
-					PrintUsage();
-					return 1;
-				}
+                    Logger.Error("If not null, config profile query must contain a valid non-empty and non-whitespace string.");
+                    PrintUsage();
+                    return 1;
+                }
 
-				configProfileQueries = ParseConfigProfileQuery(configProfileQuery);
+                configProfileQueries = ParseConfigProfileQuery(configProfileQuery);
 
                 if (configProfileQueries == null)
                 {
-					Logger.Error("Could not parse config profile query.");
-					PrintUsage();
-					return 1;
-				}
+                    Logger.Error("Could not parse config profile query.");
+                    PrintUsage();
+                    return 1;
+                }
             }
 
             string configJson = cl.GetValueString("-cf", null!);
@@ -945,19 +835,19 @@ namespace HashifyNETCLI
             {
                 if (!IsValidString(configJson) || !File.Exists(configJson))
                 {
-					Logger.Error("If not null, config JSON file must have a valid non-empty, non-whitespace file path pointing to an existing file.");
-					PrintUsage();
-					return 1;
-				}
+                    Logger.Error("If not null, config JSON file must have a valid non-empty, non-whitespace file path pointing to an existing file.");
+                    PrintUsage();
+                    return 1;
+                }
 
-				_jsonConfigs = ParseJSONConfig(configJson);
+                _jsonConfigs = ParseJSONConfig(configJson);
                 if (_jsonConfigs == null)
                 {
-					// Assuming ParseJSONConfig already logged the error.
-					PrintUsage();
-					return 1;
+                    // Assuming ParseJSONConfig already logged the error.
+                    PrintUsage();
+                    return 1;
                 }
-			}
+            }
 
             if (!IsValidString(inputScript))
             {
@@ -994,51 +884,51 @@ namespace HashifyNETCLI
                 return 1;
             }
 
-			object input;
-			try
-			{
-				input = InputScript(inputScript);
-			}
-			catch (FailException ex)
-			{
-				Logger.Error(ex.Message);
-				return 2;
-			}
-			catch (Exception ex)
-			{
-				Logger.Error("Input script failed to execute: {0}", ex);
-				return 1;
-			}
+            object input;
+            try
+            {
+                input = scriptEngine.InputScript(inputScript);
+            }
+            catch (FailException ex)
+            {
+                Logger.Error(ex.Message);
+                return 2;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Input script failed to execute: {0}", ex);
+                return 1;
+            }
 
-			if (input == null)
-			{
-				Logger.Error("Input script returned null.");
-				return 1;
-			}
+            if (input == null)
+            {
+                Logger.Error("Input script returned null.");
+                return 1;
+            }
 
-			object finalizedInput;
-			try
-			{
-				finalizedInput = FinalizeInputScript(inputFinalizer, input);
-			}
-			catch (FailException ex)
-			{
-				Logger.Error(ex.Message);
-				return 2;
-			}
-			catch (Exception ex)
-			{
-				Logger.Error("Input finalizer script failed to execute: {0}", ex);
-				return 1;
-			}
+            object finalizedInput;
+            try
+            {
+                finalizedInput = scriptEngine.FinalizeInputScript(inputFinalizer, input);
+            }
+            catch (FailException ex)
+            {
+                Logger.Error(ex.Message);
+                return 2;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Input finalizer script failed to execute: {0}", ex);
+                return 1;
+            }
 
-			if (!(finalizedInput is byte[] inputArray))
-			{
-				Logger.Error("Input finalizer script must return a byte array.");
-				return 1;
-			}
+            if (!(finalizedInput is byte[] inputArray))
+            {
+                Logger.Error("Input finalizer script must return a byte array.");
+                return 1;
+            }
 
-			IReadOnlyList<FunctionVar> types = GetHashFunction(algorithm);
+            IReadOnlyList<FunctionVar> types = GetHashFunction(algorithm);
             if (types == null || types.Count < 1)
             {
                 Logger.Error("Invalid or unsupported algorithm specified.");
@@ -1077,18 +967,18 @@ namespace HashifyNETCLI
                             JsonConfigProfile? jsonConfigProfile = null;
                             if (_jsonConfigs != null && _jsonConfigs.Count > 0)
                             {
-								jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar).FirstOrDefault();
+                                jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar).FirstOrDefault();
 
-								// Try again without the var name, in case there is a globalized config for this function type.
-								if (jsonConfigProfile.HasValue && !jsonConfigProfile.Value.IsValid)
+                                // Try again without the var name, in case there is a globalized config for this function type.
+                                if (jsonConfigProfile.HasValue && !jsonConfigProfile.Value.IsValid)
                                 {
                                     FunctionVar fvar2 = new FunctionVar(null, fvar.Function);
-									jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar2).FirstOrDefault();
-								}
+                                    jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar2).FirstOrDefault();
+                                }
 
                                 if (jsonConfigProfile.HasValue && jsonConfigProfile.Value.Config == null && jsonConfigProfile.Value.Owner == null && jsonConfigProfile.Value.Name == null)
                                 {
-									jsonConfigProfile = null;
+                                    jsonConfigProfile = null;
                                 }
                             }
 
@@ -1106,7 +996,7 @@ namespace HashifyNETCLI
                     {
                         Logger.Error("Could not create hash function instance: {0}", ex);
                         return 1;
-					}
+                    }
 
                     if (function == null)
                     {
@@ -1125,25 +1015,37 @@ namespace HashifyNETCLI
                         return 1;
                     }
 
-                    object finalizedOutput;
+                    if (result == null)
+                    {
+                        Logger.Error($"Hash computation for '{GetHashFunctionName(fvar)}' returned a null result.");
+                        return 1;
+					}
+
+					object finalizedOutput;
                     try
                     {
-                        finalizedOutput = FinalizeOutputScript(outputFinalizer, result);
+                        finalizedOutput = scriptEngine.FinalizeOutputScript(outputFinalizer, result);
                     }
-					catch (FailException ex)
-					{
-						Logger.Error(ex.Message);
-						return 2;
-					}
-					catch (Exception ex)
+                    catch (FailException ex)
                     {
-						Logger.Error("Output finalizer script failed to execute: {0}", ex);
-						return 1;
+                        Logger.Error(ex.Message);
+                        return 2;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error("Output finalizer script failed to execute: {0}", ex);
+                        return 1;
+                    }
+
+                    if (finalizedOutput == null)
+                    {
+                        Logger.Error("Output finalizer script returned null.");
+                        return 1;
 					}
 
                     try
                     {
-                        OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
+						scriptEngine.OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
                     }
                     catch (FailException ex)
                     {
@@ -1160,7 +1062,7 @@ namespace HashifyNETCLI
                 {
                     Logger.Error("An unexpected error occurred: {0}", ex);
                     return 1;
-				}
+                }
             }
 
             return 0;
