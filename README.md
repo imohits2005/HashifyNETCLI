@@ -5,7 +5,7 @@ HashifyNET CLI is a professional command-line utility for computing various cryp
 
 This CLI relies completely on the [HashifyNET](https://github.com/Deskasoft/HashifyNET) project to demonstrate its capabilities and provide a standardized method for computing multiple hash algorithms.
 
-HashifyNET CLI uses runtime C# scripts for I/O operations. This makes it as flexible as writing C# code without having to write a complete C# program. You are able to process any input and output with anything you desire without limitations.
+HashifyNET CLI uses [Lua](https://github.com/NLua/NLua) scripts for I/O operations. This makes it as flexible as writing C# code without having to write a complete C# program. You are able to process any input and output with anything you desire without limitations.
 
 We support command-line parameters, a file for specifying command-line parameters (preferably for long command lines and to avoid getting stuck by operating system limitations), and JSON config files to customize your own settings for the hash algorithms you want to use.
 
@@ -58,12 +58,12 @@ Usage Scenario Examples
 
 #### Random CRC32 hash for every call:
 ```
-HashifyCLI -i "DateTimeOffset.UtcNow.Ticks.ToString()" -a "CRC" -cp "CRC=CRC32"
+HashifyCLI -i "tostring(DateTimeOffset.UtcNow.Ticks)" -a "CRC" -cp "CRC=CRC32"
 ```
 
 #### Validate Hash - Ensure the computed hash equals to pre-computed hash
 ```
-HashifyCLI -i "ReadAllBytes('HashifyNET.dll')" -if "Input" -a "MD5" -of "AsHexString() != '18c5770ef035f90924b988f2a947362a' ? Fail('Hash Mismatch').ToString() : 'Hash Matches!'"
+HashifyCLI -i "ReadAllBytes('HashifyNET.dll')" -if "Input" -a "MD5" -of "AsHexString() ~= '18c5770ef035f90924b988f2a947362a' and Fail('Hash Mismatch').ToString() or 'Hash Matches!'"
 ```
 
 > [!NOTE]
