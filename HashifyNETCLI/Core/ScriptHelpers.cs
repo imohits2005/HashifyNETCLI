@@ -93,5 +93,28 @@ namespace HashifyNETCLI
 
 			return bytes;
 		}
+
+		public static byte[] ToByteArray(NLua.LuaTable table)
+		{
+			if (table == null)
+				throw new ArgumentNullException(nameof(table));
+
+			if (table.Values.Count < 1)
+				return Array.Empty<byte>();
+
+			byte[] result = new byte[table.Values.Count];
+			int ndx = 0;
+			foreach (var value in table.Values)
+			{
+				if (value is not long && value is not int && value is not byte)
+					throw new ArgumentException("Lua table contains non-integer values.");
+
+				byte b = Convert.ToByte(value);
+				result[ndx] = b;
+				ndx++;
+			}
+
+			return result;
+		}
 	}
 }
