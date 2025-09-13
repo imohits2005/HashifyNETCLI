@@ -47,13 +47,21 @@ namespace HashifyNETCLI
 
 		public static bool PrintDirect(string message, params object[] args)
 		{
+			if (!message.EndsWith("\n"))
+				message = message += "\n";
+
 			Logger.ScriptDirect(message, args);
 			return true;
 		}
 
 		public static bool PrintDirect(object message, params object[] args)
 		{
-			Logger.ScriptDirect(message is string ? (string)message : message?.ToString() ?? "N/A", args);
+			string m = message is string ? (string)message : message?.ToString() ?? "N/A";
+
+			if (!m.EndsWith("\n"))
+				m += "\n";
+
+			Logger.ScriptDirect(m, args);
 			return true;
 		}
 
