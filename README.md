@@ -1,13 +1,19 @@
 Welcome to HashifyNET Command Line Interface
 --------------------------------------------
 
-HashifyNET CLI is a professional command-line utility for computing various cryptographic and non-cryptographic hash algorithms supported by [HashifyNET](https://github.com/Deskasoft/HashifyNET).
+HashifyNET CLI is a robust and versatile platform-independent command-line utility. It provides a high-performance interface for computing a comprehensive array of cryptographic and non-cryptographic hash algorithms, all of which are made available through the underlying [HashifyNET](https://github.com/Deskasoft/HashifyNET) library.
 
-This CLI relies completely on the [HashifyNET](https://github.com/Deskasoft/HashifyNET) project to demonstrate its capabilities and provide a standardized method for computing multiple hash algorithms.
+The CLI is fundamentally powered by the [HashifyNET](https://github.com/Deskasoft/HashifyNET) project, inheriting its extensive suite of validated hash algorithm implementations. This foundational dependency ensures that all computations are both accurate and efficient. The tool serves a dual purpose: it acts as a practical demonstration of the library's power and provides the community with a standardized, reliable utility for hash computation tasks.
 
-HashifyNET CLI uses [Lua](https://github.com/NLua/NLua) scripts for I/O operations. This makes it as flexible as writing C# code without having to write a complete C# program. You are able to process any input and output with anything you desire without limitations.
+A key architectural feature of HashifyNET CLI is its use of [Lua](https://github.com/NLua/NLua) for all input/output (I/O) operations. This design choice empowers users with unparalleled flexibility, far exceeding that of typical command-line tools. It grants a level of control comparable to native C# programming without the overhead of compiling a full application. Users can implement complex logic to preprocess input data from various sources, interact with external systems, or dynamically format the output into structured formats such as JSON, CSV, or XML, tailored to their specific needs.
 
-We support command-line parameters, a file for specifying command-line parameters (preferably for long command lines and to avoid getting stuck by operating system limitations), and JSON config files to customize your own settings for the hash algorithms you want to use.
+To accommodate a wide range of operational scenarios, from simple ad-hoc tasks to complex, automated workflows, the utility provides a hierarchical configuration system:
+
+* **Direct Command-Line Parameters:** For straightforward, immediate operations and easy integration into shell scripts.
+* **Parameter Files:** Ideal for managing exceptionally long or complex command-line arguments. This method enhances readability, ensures reproducibility, and circumvents potential command-length and syntax limitations imposed by the operating system.
+* **JSON Configuration Files:** For advanced customization, users can define persistent settings, configure algorithm-specific parameters (e.g., keys, salts), and create multiple profiles for different use cases, ensuring a consistent and efficient workflow.
+
+The combination of extensive algorithm support and advanced scripting makes HashifyNET CLI suitable for a multitude of applications, including file integrity verification, data deduplication, digital forensics, password security analysis, and integration into larger data processing pipelines. In summary, it stands as a powerful and extensible framework for anyone requiring precise and adaptable hashing capabilities.
 
 Usage
 -----
