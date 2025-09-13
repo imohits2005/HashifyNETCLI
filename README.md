@@ -27,9 +27,9 @@ HashifyCLI -i "'Hello World'" -a "CRC" -cp "CRC=CRC32"
 HashifyCLI -i "'Hello World'" -a "CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
 ```
 
-## Quick computation of file HashifyNET.dll using MD5, CRC32 and CRC64
+### Quick computation of file HashifyCLI.exe (or HashifyCLI for Unix) using MD5, CRC32 and CRC64
 ```
-HashifyCLI -i "ReadAllBytes('HashifyNET.dll')" -if "Input" -a "MD5 CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
+HashifyCLI -i "ReadAllBytes('HashifyCLI.exe')" -if "Input" -a "MD5 CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
 ```
 
 Syntax and Execution
