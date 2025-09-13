@@ -69,15 +69,15 @@ namespace HashifyNETCLI
         {
 			Logger.Log("Usage: HashifyCLI [options]");
             Logger.Inform("Options:");
-            Logger.Inform("  -cl, --command-line             The path to a file containing the full command line.");
+            Logger.Inform("  -cl, --command-line             Open and read command line from the given file: cmdline.txt");
             Logger.Inform("  -h, --help                      Show this help message and exit.");
-			Logger.Inform("  -l, --list                      Lists available hash algorithms and exit.");
-			Logger.Inform("  -lp, --list-profiles            Lists available config profiles of a specific hash algorithm and exit: blake3 (case-insensitive).");
+			Logger.Inform("  -l, --list                      List available hash algorithms and exit.");
+			Logger.Inform("  -lp, --list-profiles            List available config profiles of a specific hash algorithm and exit: blake3 (case-insensitive).");
 			Logger.Inform("  -i, --input                     Specify input script: \"'Foo Bar'\"");
-			Logger.Inform("  -if, --input-finalizer          Finalizes the input: StringToArray(Input)");
+			Logger.Inform("  -if, --input-finalizer          Finalize the input: StringToArray(Input)");
 			Logger.Inform("  -a, --algorithms                Specify hashing algorithms: Blake2b, blake3 (case-insensitive).");
             Logger.Inform("  -o, --output                    Specify output script: Print(Algorithm .. ': ' .. Result)");
-            Logger.Inform("  -of, --output-finalizer         Finalizes the output: Join(\", \", Coerce(5):AsByteArray())");
+            Logger.Inform("  -of, --output-finalizer         Finalize the output: Join(\", \", Coerce(5):AsByteArray())");
             Logger.Inform("  -cp, --config-profiles          Specify the config profiles (one for every algorithm specified by --algorithms) to use: CRC=CRC32 Argon2id=OWASP (case-insensitive).");
             Logger.Inform("  -cf, --config-file              Specify the config JSON to use: configs.json.");
 
