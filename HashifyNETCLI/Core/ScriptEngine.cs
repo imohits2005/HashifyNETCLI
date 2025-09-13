@@ -1,4 +1,4 @@
-﻿// *
+// *
 // *****************************************************************************
 // *
 // * Copyright (c) 2025 Deskasoft International
@@ -44,6 +44,7 @@ namespace HashifyNETCLI
 		{
 			_luaState = new Lua();
 			_luaState.State.Encoding = Encoding.UTF8;
+
 			_luaState.LoadCLRPackage();
 			_luaState.DoString("import ('HashifyNet', 'HashifyNet')");
 			_luaState.DoString("import ('HashifyNETCLI', 'HashifyNETCLI')");
@@ -59,7 +60,6 @@ namespace HashifyNETCLI
 		private static void PushLuaHelpers(Lua state, Type staticType)
 		{
 			MethodInfo[] mis = staticType.GetMethods(BindingFlags.Public | BindingFlags.Static);
-
 			if (mis.Length < 1)
 			{
 				Logger.Warning($"No public static method available in '{staticType.FullName}' to bind into Lua.");
