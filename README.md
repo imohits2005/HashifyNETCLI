@@ -137,7 +137,7 @@ Here's another JSON containing multiple configs:
 ```
 
 JSON containing multiple configs for the same algorithm:
-```JSON
+```JSONC
 {
 	// Default CRC config that will be used for callees without a suffix.
 	"CRC": {
