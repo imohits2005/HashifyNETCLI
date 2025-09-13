@@ -17,6 +17,8 @@ The combination of extensive algorithm support and advanced scripting makes Hash
 
 Usage
 -----
+You can find the pre-built binaries in the [Releases](https://github.com/Deskasoft/HashifyNETCLI/releases) page.
+
 ### Quick computation using CRC32
 ```
 HashifyCLI -i "'Hello World'" -a "CRC" -cp "CRC=CRC32"
