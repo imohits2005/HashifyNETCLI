@@ -13,7 +13,7 @@
     <Company>Deskasoft International</Company>
     <Product>HashifyNETConsole</Product>
     <Copyright>Copyright © Deskasoft International</Copyright>
-    <Version>0.5.0</Version>
+    <Version>0.6.0</Version>
     <Authors>$(Company)</Authors>
     <AssemblyOriginatorKeyFile>..\HashifyNET.publickey</AssemblyOriginatorKeyFile>
     <NuGetAudit>False</NuGetAudit>
