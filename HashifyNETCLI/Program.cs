@@ -950,12 +950,14 @@ namespace HashifyNETCLI
 				{
 					try
 					{
+						string hashFunctionName = GetHashFunctionName(fvar);
+
 						if (inputStream != null)
 						{
 							// Rewind the stream to the beginning for every algorithm to process the entire input.
 							if (inputStream.Seek(0, SeekOrigin.Begin) != 0)
 							{
-								Logger.Error($"Failed to rewind the stream to the beginning for read operation by '{GetHashFunctionName(fvar)}'.");
+								Logger.Error($"Failed to rewind the stream to the beginning for read operation by '{hashFunctionName}'.");
 								return 1;
 							}
 						}
@@ -975,7 +977,7 @@ namespace HashifyNETCLI
 								IHashConfigBase configProfile = profile.Create();
 								if (configProfile == null)
 								{
-									Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(fvar)}'.");
+									Logger.Error($"Could not get the config profile instance for algorithm '{hashFunctionName}'.");
 									PrintAlgorithms();
 									return 1;
 								}
@@ -1014,13 +1016,13 @@ namespace HashifyNETCLI
 						}
 						catch (Exception ex)
 						{
-							Logger.Error("Could not create hash function instance: {0}", ex);
+							Logger.Error($"Could not create hash function instance for '{hashFunctionName}': {ex}");
 							return 1;
 						}
 
 						if (function == null)
 						{
-							Logger.Error("Failed to create hash function instance.");
+							Logger.Error($"Failed to create hash function instance for '{hashFunctionName}'.");
 							return 1;
 						}
 
@@ -1039,7 +1041,13 @@ namespace HashifyNETCLI
 									if (inputStream.Length < chunkSize)
 									{
 										var buffer = new byte[inputStream.Length];
-										inputStream.Read(buffer, 0, buffer.Length);
+
+										if (inputStream.Read(buffer, 0, buffer.Length) != buffer.Length)
+										{
+											Logger.Error($"Failed to read the entire stream for '{hashFunctionName}'.");
+											return 1;
+										}
+
 										result = function.ComputeHash(buffer);
 									}
 									else
@@ -1047,7 +1055,7 @@ namespace HashifyNETCLI
 										IBlockTransformer transformer = streamableHash.CreateBlockTransformer();
 										if (transformer == null)
 										{
-											Logger.Error($"Failed to create a valid block transformer for '{GetHashFunctionName(fvar)}'.");
+											Logger.Error($"Failed to create a valid block transformer for '{hashFunctionName}'.");
 											return 1;
 										}
 
@@ -1074,7 +1082,7 @@ namespace HashifyNETCLI
 
 											Logger.LogDirect("\r", null, null);
 
-											Logger.LogDirect($"[{DateTimeOffset.UtcNow:MM/dd/yy-HH:mm:ss}] [{GetHashFunctionName(fvar)}] Transforming bytes: {totalRead}/{inputStream.Length} [", ConsoleColor.Gray, null);
+											Logger.LogDirect($"[{DateTimeOffset.UtcNow:MM/dd/yy-HH:mm:ss}] [{hashFunctionName}] Transforming bytes: {totalRead}/{inputStream.Length} [", ConsoleColor.Gray, null);
 
 											if (redBlocks > 0) Logger.LogDirect(new string('█', redBlocks), ConsoleColor.Red, null);
 											if (yellowBlocks > 0) Logger.LogDirect(new string('█', yellowBlocks), ConsoleColor.DarkYellow, null);
@@ -1088,6 +1096,12 @@ namespace HashifyNETCLI
 
 										Logger.LogDirect("\n", null, null);
 
+										if (totalRead != inputStream.Length)
+										{
+											Logger.Error($"Failed to read the entire stream for '{hashFunctionName}'.");
+											return 1;
+										}
+
 										result = transformer.FinalizeHashValue();
 									}
 								}
@@ -1095,14 +1109,18 @@ namespace HashifyNETCLI
 								{
 									if (inputStream.Length > int.MaxValue)
 									{
-										Logger.Error($"Unable to compute hash for '{GetHashFunctionName(fvar)}' with a stream size of over ~2 GB ({inputStream.Length} bytes). The all in once computation is designed for inputs smaller than 2 GB. Please pick algorithms that supports streaming data.");
+										Logger.Error($"Unable to compute hash for '{hashFunctionName}' with a stream size of over ~2 GB ({inputStream.Length} bytes). The all in once computation is designed for inputs smaller than 2 GB. Please pick algorithms that supports streaming data.");
 										return 1;
 									}
 
-									Logger.Warning($"Got a stream but the input algorithm '{GetHashFunctionName(fvar)}' does not support streaming computation. Trying to compute all data at once...");
+									Logger.Warning($"Got a stream but the input algorithm '{hashFunctionName}' does not support streaming computation. Trying to compute all data at once...");
 
 									byte[] buffer = new byte[inputStream.Length];
-									inputStream.Read(buffer, 0, buffer.Length);
+									if (inputStream.Read(buffer, 0, buffer.Length) != buffer.Length)
+									{
+										Logger.Error($"Failed to read the entire stream for '{hashFunctionName}'.");
+										return 1;
+									}
 
 									result = function.ComputeHash(buffer);
 								}
@@ -1120,7 +1138,7 @@ namespace HashifyNETCLI
 
 						if (result == null)
 						{
-							Logger.Error($"Hash computation for '{GetHashFunctionName(fvar)}' returned a null result.");
+							Logger.Error($"Hash computation for '{hashFunctionName}' returned a null result.");
 							return 1;
 						}
 
@@ -1148,7 +1166,7 @@ namespace HashifyNETCLI
 
 						try
 						{
-							scriptEngine.OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
+							scriptEngine.OutputScript(outputScript, finalizedOutput, hashFunctionName);
 						}
 						catch (FailException ex)
 						{
