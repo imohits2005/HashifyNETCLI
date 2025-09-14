@@ -430,7 +430,7 @@ namespace HashifyNETCLI
                     values.Add(value);
 				}
 
-                if (values.Count > 1)
+                if (values.Count > 0)
                 {
                     Array array;
 
@@ -924,7 +924,7 @@ namespace HashifyNETCLI
 
 			byte[] inputArray = (finalizedInput as byte[])!;
 			Stream inputStream = (finalizedInput as Stream)!;
-			if (inputArray == null && inputScript == null)
+			if (inputArray == null && inputStream == null)
 			{
 				Logger.Error("Input finalizer script must either return a byte array or a stream.");
 				return 1;
@@ -1190,7 +1190,6 @@ namespace HashifyNETCLI
 			{
 				if (inputStream != null)
 				{
-					inputStream.Close();
 					inputStream.Dispose();
 					inputStream = null!;
 				}
