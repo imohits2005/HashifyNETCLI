@@ -487,7 +487,11 @@ namespace HashifyNETCLI
 					{
 						array = new BigInteger[values.Count];
 					}
-                    else
+					else if (underlyingType == typeof(bool))
+					{
+						array = new bool[values.Count];
+					}
+					else
                     {
                         array = null!;
                     }
