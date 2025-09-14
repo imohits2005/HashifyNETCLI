@@ -15,10 +15,14 @@ To accommodate a wide range of operational scenarios, from simple ad-hoc tasks t
 
 The combination of extensive algorithm support and advanced scripting makes HashifyNET CLI suitable for a multitude of applications, including file integrity verification, data deduplication, digital forensics, password security analysis, and integration into larger data processing pipelines. In summary, it stands as a powerful and extensible framework for anyone requiring precise and adaptable hashing capabilities.
 
-Usage
------
+Installation
+------------
+Currently, the only ways to access HashifyNETCLI are downloading the pre-built binaries from here on GitHub or building the source code yourself.
+
 You can find the pre-built binaries in the [Releases](https://github.com/Deskasoft/HashifyNETCLI/releases) page.
 
+Usage
+-----
 > [!IMPORTANT]
 > Starting from version **0.7.0**, HashifyNETCLI supports streaming computation for large files.
 > Please use `OpenRead` instead of `ReadAllBytes` for large files.
