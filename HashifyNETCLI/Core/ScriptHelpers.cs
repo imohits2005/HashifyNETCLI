@@ -100,7 +100,7 @@ namespace HashifyNETCLI
 				throw new ArgumentNullException(nameof(table));
 
 			if (table.Values.Count < 1)
-				return Array.Empty<byte>();
+				return System.Array.Empty<byte>();
 
 			byte[] result = new byte[table.Values.Count];
 			int ndx = 0;
@@ -115,6 +115,95 @@ namespace HashifyNETCLI
 			}
 
 			return result;
+		}
+
+		public static Array ToArray(NLua.LuaTable table)
+		{
+			if (table == null)
+				throw new ArgumentNullException(nameof(table));
+
+			if (table.Values.Count < 1)
+				return System.Array.Empty<byte>();
+
+			System.Collections.IEnumerator enumerator = table.Values.GetEnumerator();
+			if (!enumerator.MoveNext())
+				return System.Array.Empty<byte>();
+
+			object o = enumerator.Current;
+			if (o == null)
+			{
+				return System.Array.Empty<byte>();
+			}
+
+			Type type = o.GetType();
+			Type originalType = type;
+
+			// We prefer byte arrays over long arrays if all values are in the range of byte.MinValue and byte.MaxValue
+			// TODO: This results in shorter scripts but with implicit conversions. Review it to ensure it has no harm.
+			if (type == typeof(long))
+			{
+				bool fits = true;
+				foreach (object v in table.Values)
+				{
+					long l = (long)v;
+					if (l < byte.MinValue || l > byte.MaxValue)
+					{
+						fits = false;
+						break;
+					}
+				}
+
+				if (fits)
+					type = typeof(byte);
+			}
+
+			Array array;
+			if (type == typeof(byte))
+			{
+				array = new byte[table.Values.Count];
+			}
+			else if (type == typeof(string))
+			{
+				array = new string[table.Values.Count];
+			}
+			else if (type == typeof(int))
+			{
+				array = new int[table.Values.Count];
+			}
+			else if (type == typeof(long))
+			{
+				array = new long[table.Values.Count];
+			}
+			else if (type == typeof(double))
+			{
+				array = new double[table.Values.Count];
+			}
+			else if (type == typeof(float))
+			{
+				array = new float[table.Values.Count];
+			}
+			else if (type == typeof(bool))
+			{
+				array = new bool[table.Values.Count];
+			}
+			else
+			{
+				array = new object[table.Values.Count];
+			}
+
+			int ndx = 0;
+			foreach (var value in table.Values)
+			{
+				if (value == null || value.GetType() != originalType)
+				{
+					throw new ArgumentException("Lua table contains mixed or null types which cannot be converted to a C# array directly.");
+				}
+
+				array.SetValue(type == originalType ? value : Convert.ChangeType(value, type), ndx);
+				ndx++;
+			}
+
+			return array;
 		}
 	}
 }
