@@ -20,7 +20,7 @@ Usage
 You can find the pre-built binaries in the [Releases](https://github.com/Deskasoft/HashifyNETCLI/releases) page.
 
 > [!IMPORTANT]
-> Starting from version 0.7.0, HashifyNETCLI supports streaming computation for large files.
+> Starting from version **0.7.0**, HashifyNETCLI supports streaming computation for large files.
 > Please use `OpenRead` instead of `ReadAllBytes` for large files.
 
 ### Quick computation using CRC32
@@ -88,7 +88,7 @@ HashifyCLI -i "ToArray({5, 3, 1})" -if "Input" -a "MD5" -of "AsHexString() ~= '3
 ```
 
 > [!IMPORTANT]
-> Lua table conversion with `ToArray` is available in 0.7.0 and later.
+> Lua table conversion with `ToArray` or `ToByteArray` is available in **0.7.0** and later.
 
 > [!NOTE]
 > Call to Fail interrupts the entire execution and causes the CLI to return status code 2.
