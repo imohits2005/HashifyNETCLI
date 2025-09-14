@@ -11,7 +11,7 @@
     <DelaySign>True</DelaySign>
 
     <Company>Deskasoft International</Company>
-    <Product>HashifyNETConsole</Product>
+    <Product>HashifyNETCLI</Product>
     <Copyright>Copyright © Deskasoft International</Copyright>
     <Version>0.7.0</Version>
     <Authors>$(Company)</Authors>
@@ -32,4 +32,5 @@
   </ItemGroup>
 
 </Project>
+
 
