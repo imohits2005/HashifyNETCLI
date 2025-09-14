@@ -87,7 +87,7 @@ namespace HashifyNETCLI
 			state.RegisterFunction(name, target, method);
 		}
 
-		public static void PushLuaVariables(Lua state, object instance)
+		private static void PushLuaVariables(Lua state, object instance)
 		{
 			Type type = instance.GetType();
 
