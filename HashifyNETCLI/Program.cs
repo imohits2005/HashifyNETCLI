@@ -922,11 +922,19 @@ namespace HashifyNETCLI
                 return 1;
             }
 
-            if (!(finalizedInput is byte[] inputArray))
-            {
-                Logger.Error("Input finalizer script must return a byte array.");
-                return 1;
-            }
+			byte[] inputArray = (finalizedInput as byte[])!;
+			Stream inputStream = (finalizedInput as Stream)!;
+			if (inputArray == null && inputScript == null)
+			{
+				Logger.Error("Input finalizer script must either return a byte array or a stream.");
+				return 1;
+			}
+
+			if (inputStream != null && (!inputStream.CanRead || !inputStream.CanSeek))
+			{
+				Logger.Error("Input finalizer script must return a valid readable and seekable stream.");
+				return 1;
+			}
 
             IReadOnlyList<FunctionVar> types = GetHashFunction(algorithm);
             if (types == null || types.Count < 1)
@@ -936,136 +944,241 @@ namespace HashifyNETCLI
                 return 1;
             }
 
-            foreach (FunctionVar fvar in types)
-            {
-                try
-                {
-                    IHashConfigProfile? profile = null;
-                    if (configProfileQueries != null)
-                    {
-                        profile = GetConfigProfile(fvar, configProfileQueries);
-                    }
+			try
+			{
+				foreach (FunctionVar fvar in types)
+				{
+					try
+					{
+						if (inputStream != null)
+						{
+							// Rewind the stream to the beginning for every algorithm to process the entire input.
+							if (inputStream.Seek(0, SeekOrigin.Begin) != 0)
+							{
+								Logger.Error($"Failed to rewind the stream to the beginning for read operation by '{GetHashFunctionName(fvar)}'.");
+								return 1;
+							}
+						}
 
-                    IHashFunctionBase function;
+						IHashConfigProfile? profile = null;
+						if (configProfileQueries != null)
+						{
+							profile = GetConfigProfile(fvar, configProfileQueries);
+						}
 
-                    try
-                    {
-                        if (profile != null)
-                        {
-                            IHashConfigBase configProfile = profile.Create();
-                            if (configProfile == null)
-                            {
-                                Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(fvar)}'.");
-                                PrintAlgorithms();
-                                return 1;
-                            }
+						IHashFunctionBase function;
 
-                            function = HashFactory.Create(fvar.Function, configProfile);
-                        }
-                        else
-                        {
-                            JsonConfigProfile? jsonConfigProfile = null;
-                            if (_jsonConfigs != null && _jsonConfigs.Count > 0)
-                            {
-                                jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar).FirstOrDefault();
+						try
+						{
+							if (profile != null)
+							{
+								IHashConfigBase configProfile = profile.Create();
+								if (configProfile == null)
+								{
+									Logger.Error($"Could not get the config profile instance for algorithm '{GetHashFunctionName(fvar)}'.");
+									PrintAlgorithms();
+									return 1;
+								}
 
-                                // Try again without the var name, in case there is a globalized config for this function type.
-                                if (jsonConfigProfile.HasValue && !jsonConfigProfile.Value.IsValid)
-                                {
-                                    FunctionVar fvar2 = new FunctionVar(null, fvar.Function);
-                                    jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar2).FirstOrDefault();
-                                }
+								function = HashFactory.Create(fvar.Function, configProfile);
+							}
+							else
+							{
+								JsonConfigProfile? jsonConfigProfile = null;
+								if (_jsonConfigs != null && _jsonConfigs.Count > 0)
+								{
+									jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar).FirstOrDefault();
 
-                                if (jsonConfigProfile.HasValue && jsonConfigProfile.Value.Config == null && jsonConfigProfile.Value.Owner == null && jsonConfigProfile.Value.Name == null)
-                                {
-                                    jsonConfigProfile = null;
-                                }
-                            }
+									// Try again without the var name, in case there is a globalized config for this function type.
+									if (jsonConfigProfile.HasValue && !jsonConfigProfile.Value.IsValid)
+									{
+										FunctionVar fvar2 = new FunctionVar(null, fvar.Function);
+										jsonConfigProfile = _jsonConfigs.Where(t => t.Type == fvar.Function).FirstOrDefault().Profiles?.Where(t => t.AsVar() == fvar2).FirstOrDefault();
+									}
 
-                            if (jsonConfigProfile.HasValue)
-                            {
-                                function = HashFactory.Create(fvar.Function, jsonConfigProfile.Value.Config);
-                            }
-                            else
-                            {
-                                function = HashFactory.Create(fvar.Function);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error("Could not create hash function instance: {0}", ex);
-                        return 1;
-                    }
+									if (jsonConfigProfile.HasValue && jsonConfigProfile.Value.Config == null && jsonConfigProfile.Value.Owner == null && jsonConfigProfile.Value.Name == null)
+									{
+										jsonConfigProfile = null;
+									}
+								}
 
-                    if (function == null)
-                    {
-                        Logger.Error("Failed to create hash function instance.");
-                        return 1;
-                    }
+								if (jsonConfigProfile.HasValue)
+								{
+									function = HashFactory.Create(fvar.Function, jsonConfigProfile.Value.Config);
+								}
+								else
+								{
+									function = HashFactory.Create(fvar.Function);
+								}
+							}
+						}
+						catch (Exception ex)
+						{
+							Logger.Error("Could not create hash function instance: {0}", ex);
+							return 1;
+						}
 
-                    IHashValue result;
-                    try
-                    {
-                        result = function.ComputeHash(inputArray);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error("Hash computation failed: {0}", ex);
-                        return 1;
-                    }
+						if (function == null)
+						{
+							Logger.Error("Failed to create hash function instance.");
+							return 1;
+						}
 
-                    if (result == null)
-                    {
-                        Logger.Error($"Hash computation for '{GetHashFunctionName(fvar)}' returned a null result.");
-                        return 1;
+						IHashValue result;
+						try
+						{
+							if (inputArray != null)
+							{
+								result = function.ComputeHash(inputArray);
+							}
+							else if (inputStream != null)
+							{
+								if (function is IStreamableHashFunctionBase streamableHash)
+								{
+									const int chunkSize = 67108864; // 64 megabytes
+									if (inputStream.Length < chunkSize)
+									{
+										var buffer = new byte[inputStream.Length];
+										inputStream.Read(buffer, 0, buffer.Length);
+										result = function.ComputeHash(buffer);
+									}
+									else
+									{
+										IBlockTransformer transformer = streamableHash.CreateBlockTransformer();
+										if (transformer == null)
+										{
+											Logger.Error($"Failed to create a valid block transformer for '{GetHashFunctionName(fvar)}'.");
+											return 1;
+										}
+
+										byte[] buffer = new byte[chunkSize];
+										int bytesRead;
+										long totalRead = 0;
+										double progress = 0;
+
+										const int progressBarWidth = 30;
+
+										int redZoneEnd = (int)(progressBarWidth * 0.33);
+										int yellowZoneEnd = (int)(progressBarWidth * 0.66);
+
+										while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
+										{
+											totalRead += bytesRead;
+											progress = ((double)totalRead / inputStream.Length) * 100.0d;
+											int filledBlocks = (int)Math.Round((progress / 100.0) * progressBarWidth);
+
+											int redBlocks = Math.Min(filledBlocks, redZoneEnd);
+											int yellowBlocks = Math.Max(0, Math.Min(filledBlocks, yellowZoneEnd) - redZoneEnd);
+											int greenBlocks = Math.Max(0, filledBlocks - yellowZoneEnd);
+											int emptyBlocks = progressBarWidth - filledBlocks;
+
+											Logger.LogDirect("\r", null, null);
+
+											Logger.LogDirect($"[{DateTimeOffset.UtcNow:MM/dd/yy-HH:mm:ss}] [{GetHashFunctionName(fvar)}] Transforming bytes: {totalRead}/{inputStream.Length} [", ConsoleColor.Gray, null);
+
+											if (redBlocks > 0) Logger.LogDirect(new string('█', redBlocks), ConsoleColor.Red, null);
+											if (yellowBlocks > 0) Logger.LogDirect(new string('█', yellowBlocks), ConsoleColor.DarkYellow, null);
+											if (greenBlocks > 0) Logger.LogDirect(new string('█', greenBlocks), ConsoleColor.DarkGreen, null);
+											if (emptyBlocks > 0) Logger.LogDirect(new string('-', emptyBlocks), ConsoleColor.DarkGray, null);
+
+											Logger.LogDirect($"] {$"{progress,3:F0}%"}", ConsoleColor.Gray, null);
+
+											transformer.TransformBytes(new ArraySegment<byte>(buffer, 0, bytesRead));
+										}
+
+										Logger.LogDirect("\n", null, null);
+
+										result = transformer.FinalizeHashValue();
+									}
+								}
+								else
+								{
+									if (inputStream.Length > int.MaxValue)
+									{
+										Logger.Error($"Unable to compute hash for '{GetHashFunctionName(fvar)}' with a stream size of over ~2 GB ({inputStream.Length} bytes). The all in once computation is designed for inputs smaller than 2 GB. Please pick algorithms that supports streaming data.");
+										return 1;
+									}
+
+									Logger.Warning($"Got a stream but the input algorithm '{GetHashFunctionName(fvar)}' does not support streaming computation. Trying to compute all data at once...");
+
+									byte[] buffer = new byte[inputStream.Length];
+									inputStream.Read(buffer, 0, buffer.Length);
+
+									result = function.ComputeHash(buffer);
+								}
+							}
+							else
+							{
+								result = null!;
+							}
+						}
+						catch (Exception ex)
+						{
+							Logger.Error("Hash computation failed: {0}", ex);
+							return 1;
+						}
+
+						if (result == null)
+						{
+							Logger.Error($"Hash computation for '{GetHashFunctionName(fvar)}' returned a null result.");
+							return 1;
+						}
+
+						object finalizedOutput;
+						try
+						{
+							finalizedOutput = scriptEngine.FinalizeOutputScript(outputFinalizer, result);
+						}
+						catch (FailException ex)
+						{
+							Logger.Error(ex.Message);
+							return 2;
+						}
+						catch (Exception ex)
+						{
+							Logger.Error("Output finalizer script failed to execute: {0}", ex);
+							return 1;
+						}
+
+						if (finalizedOutput == null)
+						{
+							Logger.Error("Output finalizer script returned null.");
+							return 1;
+						}
+
+						try
+						{
+							scriptEngine.OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
+						}
+						catch (FailException ex)
+						{
+							Logger.Error(ex.Message);
+							return 2;
+						}
+						catch (Exception ex)
+						{
+							Logger.Error("Output script failed to execute: {0}", ex);
+							return 1;
+						}
 					}
-
-					object finalizedOutput;
-                    try
-                    {
-                        finalizedOutput = scriptEngine.FinalizeOutputScript(outputFinalizer, result);
-                    }
-                    catch (FailException ex)
-                    {
-                        Logger.Error(ex.Message);
-                        return 2;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error("Output finalizer script failed to execute: {0}", ex);
-                        return 1;
-                    }
-
-                    if (finalizedOutput == null)
-                    {
-                        Logger.Error("Output finalizer script returned null.");
-                        return 1;
+					catch (Exception ex)
+					{
+						Logger.Error("An unexpected error occurred: {0}", ex);
+						return 1;
 					}
+				}
+			}
+			finally
+			{
+				if (inputStream != null)
+				{
+					inputStream.Close();
+					inputStream.Dispose();
+					inputStream = null!;
+				}
+			}
 
-                    try
-                    {
-						scriptEngine.OutputScript(outputScript, finalizedOutput, GetHashFunctionName(fvar));
-                    }
-                    catch (FailException ex)
-                    {
-                        Logger.Error(ex.Message);
-                        return 2;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error("Output script failed to execute: {0}", ex);
-                        return 1;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("An unexpected error occurred: {0}", ex);
-                    return 1;
-                }
-            }
-
-            return 0;
+			return 0;
         }
     }
 }
