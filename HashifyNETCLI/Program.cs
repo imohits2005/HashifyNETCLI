@@ -774,7 +774,7 @@ namespace HashifyNETCLI
 
             if (cl.HasFlag("-cp") && cl.HasFlag("-cf"))
             {
-                Logger.Warning("Detected ambiguous command line parameters of '--config-profiles' and '--config-file'. '--config-profiles' will be chosen over --config-file by default but consider using only one of them.");
+                Logger.Warning("Detected ambiguous command line parameters of '--config-profiles' and '--config-file'. '--config-profiles' will be chosen over '--config-file' by default but consider using only one of them.");
             }
 
             if (cl.HasFlag("-lp"))
@@ -805,7 +805,7 @@ namespace HashifyNETCLI
             string inputScript = Stringize(cl.GetValueString("-i", null!));
             string inputFinalizer = Stringize(cl.GetValueString("-if", "StringToArray(Input)"));
             string algorithm = Stringize(cl.GetValueString("-a", null!));
-            string outputScript = Stringize(cl.GetValueString("-o", "Print(Algorithm .. ': ' .. Result)"));
+            string outputScript = Stringize(cl.GetValueString("-o", "Print('[' .. Algorithm .. '] ' .. Result)"));
             string outputFinalizer = Stringize(cl.GetValueString("-of", "Join(\", \", AsByteArray())"));
 
             string configProfileQuery = cl.GetValueString("-cp", null!);
