@@ -19,6 +19,10 @@ Usage
 -----
 You can find the pre-built binaries in the [Releases](https://github.com/Deskasoft/HashifyNETCLI/releases) page.
 
+> [!IMPORTANT]
+> Starting from version 0.7.0, HashifyNETCLI supports streaming computation for large files.
+> Please use `OpenRead` instead of `ReadAllBytes` for large files.
+
 ### Quick computation using CRC32
 ```
 HashifyCLI -i "'Hello World'" -a "CRC" -cp "CRC=CRC32"
@@ -29,15 +33,24 @@ HashifyCLI -i "'Hello World'" -a "CRC" -cp "CRC=CRC32"
 HashifyCLI -i "'Hello World'" -a "CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
 ```
 
-### Quick computation of file HashifyCLI.exe (or HashifyCLI for Unix) using MD5, CRC32 and CRC64
+### Quick computation of file HashifyCLI.exe (or HashifyCLI for Unix) using MD5, CRC32, and CRC64
 ```
 HashifyCLI -i "ReadAllBytes('HashifyCLI.exe')" -if "Input" -a "MD5 CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
 ```
 
+### Large computation
+For files larger than 64 megabytes, HashifyNETCLI reads them in 64-byte chunks.
+
+Make sure to use OpenRead or a similar alternative that returns a `Stream` and not a byte array for streaming computation support.
+```
+HashifyCLI -i "OpenRead('LARGEFILE')" -if "Input" -a "MD5 CRC:1 CRC:2" -cp "CRC:1=CRC32 CRC:2=CRC64"
+```
+<img width="1087" height="69" alt="image" src="https://github.com/user-attachments/assets/a1645394-9a5a-4228-840f-92a1e2bf4d0f" />
+
 Syntax and Execution
 --------------------
-The query used for algorithms and config profiles are the same, each execution is separated with spaces.
-A query of `CRC CRC` will be computing 2 CRC hashes, usually the same output.
+The query used for algorithms and config profiles is the same; each execution is separated with spaces.
+A query of `CRC CRC` will compute two CRC hashes, typically yielding the same output.
 
 To use the same hash algorithm more than once with different config profiles, you must use the name suffixes separated by a colon, just like this:
 ```
@@ -69,10 +82,13 @@ Usage Scenario Examples
 HashifyCLI -i "tostring(DateTimeOffset.UtcNow.Ticks)" -a "CRC" -cp "CRC=CRC32"
 ```
 
-#### Validate Hash - Ensure the computed hash equals to pre-computed hash
+#### Validate Hash - Ensure the computed hash equals the pre-computed hash
 ```
-HashifyCLI -i "ReadAllBytes('HashifyNET.dll')" -if "Input" -a "MD5" -of "AsHexString() ~= '18c5770ef035f90924b988f2a947362a' and Fail('Hash Mismatch').ToString() or 'Hash Matches!'"
+HashifyCLI -i "ToArray({5, 3, 1})" -if "Input" -a "MD5" -of "AsHexString() ~= '395a1d76a5406630c9d355a6c7b34ae0' and Fail('Hash Mismatch').ToString() or 'Hash Matches'"
 ```
+
+> [!IMPORTANT]
+> Lua table conversion with `ToArray` is available in 0.7.0 and later.
 
 > [!NOTE]
 > Call to Fail interrupts the entire execution and causes the CLI to return status code 2.
@@ -156,6 +172,11 @@ JSON containing multiple configs for the same algorithm:
 > [!NOTE]
 > JSON input is ignored when `-cp` or `--config-profiles` exists in the command line parameters.
 > Make sure to use only one of them.
+
+Bug Report & Feature Request
+----------
+For reporting bugs and feature requests, please make an [issue](https://github.com/Deskasoft/HashifyNETCLI/issues).
+For additional features or bug fixes made by you, feel free to open a [pull request](https://github.com/Deskasoft/HashifyNETCLI/pulls).
 
 License
 -------
