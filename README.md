@@ -43,7 +43,7 @@ HashifyCLI -i "ReadAllBytes('HashifyCLI.exe')" -if "Input" -a "MD5 CRC:1 CRC:2" 
 ```
 
 ### Large computation
-For files larger than 64 megabytes, HashifyNETCLI reads them in 64-byte chunks.
+For files larger than 64 megabytes, HashifyNETCLI reads them in 64-megabyte chunks.
 
 Make sure to use OpenRead or a similar alternative that returns a `Stream` and not a byte array for streaming computation support.
 ```
@@ -71,7 +71,7 @@ The command line results in something like this:
 HashifyCLI -i "'Hello World'" -a "CRC:myCrc1 CRC:myCrc2" -cp "CRC:myCrc1=CRC32 CRC:myCrc2=CRC64"
 ```
 
-This will generate 2 CRC hashes, one 32 bit, and the second one is 64 bit, for the same input.
+This will generate 2 CRC hashes, first 32-bit and the second 64-bit, for the same input.
 
 The execution order for the entire process is as follows:
 ```
