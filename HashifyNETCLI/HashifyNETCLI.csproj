@@ -13,7 +13,7 @@
     <Company>Deskasoft International</Company>
     <Product>HashifyNETCLI</Product>
     <Copyright>Copyright © Deskasoft International</Copyright>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <Authors>$(Company)</Authors>
     <AssemblyOriginatorKeyFile>..\HashifyNET.publickey</AssemblyOriginatorKeyFile>
     <NuGetAudit>False</NuGetAudit>
@@ -27,10 +27,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="HashifyNET" Version="6.0.0" />
+    <PackageReference Include="HashifyNET" Version="6.1.0" />
     <PackageReference Include="NLua" Version="1.7.5" />
   </ItemGroup>
 
 </Project>
-
-
